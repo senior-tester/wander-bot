@@ -24,13 +24,13 @@ def browser():
 
 
 def read_file():
-    with open('words.txt') as words_file:
+    with open('words.txt', encoding='utf-8') as words_file:
         words = [word.strip('\n') for word in words_file.readlines()]
     return words
 
 
 def write_file(lines):
-    with open('words.txt', 'w') as words_file:
+    with open('words.txt', 'w', encoding='utf-8') as words_file:
         words_file.write('\n'.join(lines))
 
 
