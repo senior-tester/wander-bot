@@ -5,9 +5,11 @@ from selenium.common.exceptions import ElementClickInterceptedException, Element
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.alert import Alert
 import logging
 import random
 from time import sleep
+from faker import Faker
 
 
 logging.basicConfig(filename='runtime.log', encoding='utf-8', level=logging.INFO)
@@ -69,7 +71,7 @@ def click_link_on_site(driver, word, domains):
     links = driver.find_elements(By.TAG_NAME, 'a')
 
     def is_ok_link(url: WebElement):
-        domains.extend([domain, 'mailto:'])
+        domains.extend([domain, 'mailto:', 'tel:'])
         url = url.get_attribute('href')
         if url:
             for dom in domains:
@@ -91,7 +93,13 @@ def click_link_on_site(driver, word, domains):
             try:
                 link = use_links.pop(random.randrange(len(use_links)))
                 link.click()
-                sleep(3)
+                try:
+                    WebDriverWait(driver, 3).until(EC.alert_is_present())
+                    alert = Alert(driver)
+                    alert.dismiss()
+                except TimeoutException:
+                    pass
+                # sleep(3)
 
                 tabs = driver.window_handles
                 for tab in tabs[:-1]:
@@ -114,25 +122,32 @@ def click_link_on_site(driver, word, domains):
 
 while True:
     try:
-        words = read_file()
-        if words:
-            logging.info(str(words))
-            keyword = words.pop(random.randrange(len(words)))
-            print(f'Начало цикла по слову: {keyword}')
-            sleep(3)
-            after_google = find_site(browser(), keyword)
-            write_file(words)
-            WebDriverWait(after_google, 10).until_not(EC.url_contains('google'))
-            i = 0
-            worked_domains = []
-            while True:
-                go, domain = click_link_on_site(after_google, keyword, worked_domains)
-                worked_domains.append(domain)
-                if not go:
-                    break
-        else:
-            print('The list is over')
-            break
+        fake = Faker('ru_RU')
+        source = random.choice(['fake', 'file'])
+        match source:
+            case 'file':
+                words = read_file()
+                if words:
+                    logging.info(str(words))
+                    keyword = words.pop(random.randrange(len(words)))
+                    write_file(words)
+                else:
+                    keyword = fake.word()
+
+            case _:
+                keyword = fake.word()
+
+        print(f'Начало цикла по слову: {keyword}')
+        sleep(3)
+        after_google = find_site(browser(), keyword)
+        WebDriverWait(after_google, 10).until_not(EC.url_contains('google'))
+        i = 0
+        worked_domains = []
+        while True:
+            go, domain = click_link_on_site(after_google, keyword, worked_domains)
+            worked_domains.append(domain)
+            if not go:
+                break
 
     except KeyboardInterrupt:
         print('Finished')
