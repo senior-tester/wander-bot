@@ -128,7 +128,7 @@ while True:
             case 'file':
                 words = read_file()
                 if words:
-                    logging.info(str(words))
+                    # logging.info(str(words))
                     keyword = words.pop(random.randrange(len(words)))
                     write_file(words)
                 else:
